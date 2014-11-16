@@ -6,6 +6,7 @@ import java.text.NumberFormat;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -39,6 +40,9 @@ public class PageRankDriver extends Configured implements Tool {
 					"pagerank/ranking/iter_norm" + nf.format(runs + 1));
 		}
 
+		order("pagerank/ranking/iter_norm" + nf.format(10),
+				"pagerank/ranking/output");
+
 		return 0;
 	}
 
@@ -47,7 +51,7 @@ public class PageRankDriver extends Configured implements Tool {
 
 		JobConf job = new JobConf();
 		job.setJarByClass(PageRankDriver.class);
-		job.setJobName("File Driver");
+		job.setJobName("Parsing Job");
 
 		FileInputFormat.setInputPaths(job, new Path(inputPath));
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
@@ -65,7 +69,7 @@ public class PageRankDriver extends Configured implements Tool {
 			throws IOException {
 		JobConf job = new JobConf();
 		job.setJarByClass(PageRankDriver.class);
-		job.setJobName("Rank Driver");
+		job.setJobName("Ranking Job");
 
 		FileInputFormat.setInputPaths(job, new Path(inputPath));
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
@@ -83,7 +87,7 @@ public class PageRankDriver extends Configured implements Tool {
 			throws IOException {
 		JobConf job = new JobConf();
 		job.setJarByClass(PageRankDriver.class);
-		job.setJobName("Norm Driver");
+		job.setJobName("Normalize Job");
 
 		FileInputFormat.setInputPaths(job, new Path(inputPath));
 		FileOutputFormat.setOutputPath(job, new Path(outputPath));
@@ -92,6 +96,22 @@ public class PageRankDriver extends Configured implements Tool {
 		job.setReducerClass(PageRankNormReducer.class);
 
 		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+
+		JobClient.runJob(job);
+	}
+
+	private void order(String inputPath, String outputPath) throws IOException {
+		JobConf job = new JobConf();
+		job.setJarByClass(PageRankDriver.class);
+		job.setJobName("Order Job");
+
+		FileInputFormat.setInputPaths(job, new Path(inputPath));
+		FileOutputFormat.setOutputPath(job, new Path(outputPath));
+
+		job.setMapperClass(PageRankOrderMapper.class);
+
+		job.setOutputKeyClass(FloatWritable.class);
 		job.setOutputValueClass(Text.class);
 
 		JobClient.runJob(job);
